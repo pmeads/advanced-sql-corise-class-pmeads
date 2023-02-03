@@ -22,14 +22,16 @@ function to create a window partioned by a customer and ordered by the
 distance. The closest supplier will be the first row which i can get by 
 limiting where the row number = 1
 
-We are implementing DBT at work and so this SQL is influced by DBT 
-best practices. 
+We are implementing DBT at work and CTEs are widely used in DBT. 
+This SQL is influced by DBT best practices. 
 
 *********/
 
 with 
 
+---------------
 -- IMPORT CTEs
+---------------
 
 -- Load valid cities/state data. Use to later weed out user entered
 -- address info that doesn't match a real city/state combo
@@ -96,7 +98,9 @@ suppliers as (
     )
 ),
 
+---------------
 -- LOGICAL CTEs
+---------------
 
 -- this is a rare intentional cartesian product.
 -- for each customer, we want to run through all
@@ -154,7 +158,9 @@ customer_supplier as (
     
 ),
 
--- FINAL CTE (DBT Style)
+------------
+-- FINAL CTE
+------------
 
 final as (
     
