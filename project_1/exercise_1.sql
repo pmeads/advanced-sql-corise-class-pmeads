@@ -1,3 +1,32 @@
+/********
+
+I wanted to weed out the invalid customers first so I compared the 
+city/state the customers inputed to our us_cities table. This will 
+reduce the dataset so the rest of the query has less records to deal 
+with and doesn't have to work as hard.
+
+While I was there, comparing the city/state, I might as well get the 
+lat/long info for the city at the same time. This will produce some 
+duplicates but as it's not that many and doesn't hurt us, we'll just 
+ignore them. the duplicates will be eliminated later. 
+
+next, i needed the lat/long data for the supplier 
+
+lastly, i used the st_distance and st_makepoint functions supplied 
+with snowflake to calculate the distance of a customer to all 10 suppliers. 
+because there are only 10 suppliers, a cartesian join won't be too damaging
+here and will let us go through all suppliers for each customer
+
+to get the closest supplier to a customer, i used the row_number() window 
+function to create a window partioned by a customer and ordered by the 
+distance. The closest supplier will be the first row which i can get by 
+limiting where the row number = 1
+
+We are implementing DBT at work and so this SQL is influced by DBT 
+best practices. 
+
+*********/
+
 with 
 
 -- IMPORT CTEs
