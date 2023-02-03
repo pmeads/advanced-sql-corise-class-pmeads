@@ -51,23 +51,27 @@ us_cities as (
 valid_customer_addresses as (
 
     select 
-        a.customer_id,
-        upper(a.customer_city) as customer_city_upper,
-        a.customer_state as customer_state_abbr,
-        ci.lat,
-        ci.long
-    from vk_data.customers.customer_address as a
-    join us_cities as ci on (
-            ci.city_name = upper(a.customer_city) 
-        and ci.state_abbr = a.customer_state
+        * 
+    from (
+        select 
+            a.customer_id,
+             upper(a.customer_city) as customer_city_upper,
+            a.customer_state as customer_state_abbr,
+            ci.lat,
+            ci.long,
+            row_number() over (partition by a.customer_id order by ci.lat) as rownum
+        from vk_data.customers.customer_address as a
+        join us_cities as ci on (
+                 ci.city_name = upper(a.customer_city) 
+             and ci.state_abbr = a.customer_state
+        )
     )
+    where rownum = 1
     
 ),
 
 -- now that we weeded out the bad customer data, get the rest of the customer info
--- and include the lat/long for their city/state. this will return some duplicate
--- records because we're not using zip but that's ok, they will be eliminated 
--- in the customer_supplier CTE
+-- and include the lat/long for their city/state. 
 customers as (
 
     select 
