@@ -50,10 +50,6 @@ us_cities as (
 -- our us_cities data. At the same time, we'll save the lat/long data for later
 valid_customer_addresses as (
 
--- Determine which customer addresses are good by comparing them to 
--- our us_cities data. At the same time, we'll save the lat/long data for later
-valid_customer_addresses as (
-
     select 
         a.customer_id,
          upper(a.customer_city) as customer_city_upper,
