@@ -50,23 +50,22 @@ us_cities as (
 -- our us_cities data. At the same time, we'll save the lat/long data for later
 valid_customer_addresses as (
 
+-- Determine which customer addresses are good by comparing them to 
+-- our us_cities data. At the same time, we'll save the lat/long data for later
+valid_customer_addresses as (
+
     select 
-        * 
-    from (
-        select 
-            a.customer_id,
-             upper(a.customer_city) as customer_city_upper,
-            a.customer_state as customer_state_abbr,
-            ci.lat,
-            ci.long,
-            row_number() over (partition by a.customer_id order by ci.lat) as rownum
-        from vk_data.customers.customer_address as a
-        join us_cities as ci on (
-                 ci.city_name = upper(a.customer_city) 
-             and ci.state_abbr = a.customer_state
-        )
+        a.customer_id,
+         upper(a.customer_city) as customer_city_upper,
+        a.customer_state as customer_state_abbr,
+        ci.lat,
+        ci.long
+    from vk_data.customers.customer_address as a
+    join us_cities as ci on (
+             ci.city_name = upper(a.customer_city) 
+         and ci.state_abbr = a.customer_state
     )
-    where rownum = 1
+    qualify row_number() over (partition by a.customer_id order by ci.lat) = 1
     
 ),
 
