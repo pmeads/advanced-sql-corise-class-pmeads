@@ -122,6 +122,11 @@ customer_supplier_distances as (
 -- Determine which supplier is closest to a customer
 customer_supplier as (  
 
+    -- apply a windowing function.
+    -- the window of the row_number() function in the view will be the customer_id
+    -- and that window will contain all the supplier distances for a customer.
+    -- we'll order the window by distance_from_customer so we can select the 
+    -- first result, the closest supplier (row_number() = 1)
     select 
     
         -- limit to the fields requested
@@ -133,27 +138,8 @@ customer_supplier as (
         supplier_name,
         round(distance_from_customer / 1609) as miles_from_customer
     
-    from (
-        
-        -- use an inline view and apply a windowing function.
-        -- the window of the row_number() function in the view will be the customer_id
-        -- and that window will contain all the supplier distances for a customer.
-        -- we'll order the window by distance_from_customer so we can select the 
-        -- first result, the closest supplier, in the parent query
-        select 
-        
-            *,
-            row_number() over (
-                partition by customer_id 
-                order by distance_from_customer 
-            ) as rownum
-        
-        from  customer_supplier_distances
-        
-    )
-    
-    where rownum = 1 -- ordered the window by distance_from_customer 
-                     -- so the first row will be the closest supplier
+    from customer_supplier_distances
+    qualify row_number() over ( partition by customer_id order by distance_from_customer) = 1
     
 ),
 
