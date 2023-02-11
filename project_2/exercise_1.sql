@@ -46,7 +46,7 @@ customer_addresses as
             (st_distance(us.geo_location, gary.geo_location) / 1609)::int as gary_distance_miles
             
         from vk_data.customers.customer_address
-        left outer join vk_data.resources.us_cities us 
+        join vk_data.resources.us_cities us 
             on UPPER(rtrim(ltrim(customer_state))) = upper(TRIM(us.state_abbr))
             and trim(lower(customer_city)) = trim(lower(us.city_name))
         cross join chicago 
@@ -118,8 +118,8 @@ final as
            chicago_distance_miles,
            gary_distance_miles        
         from customer_addresses as ca
-        inner join customers as c on ca.customer_id = c.customer_id
-        inner join customer_food_pref_count as cfpc on ca.customer_id = cfpc.customer_id
+        join customers as c on ca.customer_id = c.customer_id
+        join customer_food_pref_count as cfpc on ca.customer_id = cfpc.customer_id
         order by customer_name
         
     )
