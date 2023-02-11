@@ -47,7 +47,7 @@ customer_addresses as
             
         from vk_data.customers.customer_address
         join vk_data.resources.us_cities us 
-            on UPPER(rtrim(ltrim(customer_state))) = upper(TRIM(us.state_abbr))
+            on upper(rtrim(ltrim(customer_state))) = upper(trim(us.state_abbr))
             and trim(lower(customer_city)) = trim(lower(us.city_name))
         cross join chicago 
         cross join gary 
