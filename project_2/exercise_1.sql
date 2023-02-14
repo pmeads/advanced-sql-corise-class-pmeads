@@ -1,14 +1,14 @@
 /*
    Caputure Virtual Kitchen customers who ordered meal kits 
-   that mistakenly did not contain frsh parsley, and how 
+   that mistakenly did not contain fresh parsley, and how 
    far they are from the grocery stores that have agreed to 
    help us mitigate this formidable food fiasco. 
 */
 
 with 
 
-/* get the point coordinates for Chicago */
-chicago as
+/* get the point coordinates for Chicago so we can calculate distance */
+chicago_store as
     ( 
         
         select geo_location
@@ -18,8 +18,8 @@ chicago as
         
     ),
 
-/* get the point coordinates for Gary, IN */
-gary as 
+/* get the point coordinates for Gary, IN so we can calculate distance */
+gary_store as 
     (
         
         select geo_location
@@ -41,45 +41,66 @@ customer_addresses as
     (
         
         select
+
             customer_address.*,
-            (st_distance(us.geo_location, chicago.geo_location) / 1609)::int as chicago_distance_miles,
-            (st_distance(us.geo_location, gary.geo_location) / 1609)::int as gary_distance_miles
-            
+
+            (
+                st_distance(
+                    us.geo_location, 
+                    chicago_store.geo_location
+                ) / 1609
+            )::int as chicago_store_distance_miles,
+
+            (
+                st_distance(
+                    us.geo_location, 
+                    gary_store.geo_location
+                ) / 1609
+            )::int as gary_store_distance_miles
+
         from vk_data.customers.customer_address
+
         join vk_data.resources.us_cities us 
             on upper(rtrim(ltrim(customer_state))) = upper(trim(us.state_abbr))
             and trim(lower(customer_city)) = trim(lower(us.city_name))
-        cross join chicago 
-        cross join gary 
-        where 
-        (
-            ( customer_state = 'KY' )
-            and 
-            (
-                trim(lower(customer_city)) ilike '%concord%' 
-                or trim(lower(customer_city)) ilike '%geogetown%'
-                or trim(lower(customer_city)) ilike '%ashland%'
-            )
 
-        )
-        or
-        (
-            ( customer_state = 'CA' ) 
-                and
+        cross join chicago_store       -- need the point coordinates for the chicago store 
+
+        cross join gary_store          -- need the point coordinates for the gary store
+
+        where 
+            /*
+                the affected customers are only in certain cities of a few states           
+            */
             (
-                trim(lower(customer_city)) ilike '%oakland%'
-                or trim(lower(customer_city)) ilike '%pleasant hill%'
+                ( customer_state = 'KY' )
+                and 
+                (
+                    trim(lower(customer_city)) ilike '%concord%' 
+                    or trim(lower(customer_city)) ilike '%georgetown%'
+                    or trim(lower(customer_city)) ilike '%ashland%'
+                )
+
             )
-        )
-        or
-        (
-            ( customer_state = 'TX' ) 
-                and
+            or
             (
-                trim(lower(customer_city)) ilike '%arlington%'
-                or trim(lower(customer_city)) ilike '%brownsville%'
+                ( customer_state = 'CA' ) 
+                    and
+                (
+                    trim(lower(customer_city)) ilike '%oakland%'
+                    or trim(lower(customer_city)) ilike '%pleasant hill%'
+                )
             )
-        )        
+            or
+            (
+                ( customer_state = 'TX' ) 
+                    and
+                (
+                    trim(lower(customer_city)) ilike '%arlington%'
+                    or trim(lower(customer_city)) ilike '%brownsville%'
+                )
+            )        
+
     ),
 
 /* just need the customer name from the customer_data table */
@@ -115,8 +136,8 @@ final as
            ca.customer_city,
            ca.customer_state,
            cfpc.food_pref_count,
-           chicago_distance_miles,
-           gary_distance_miles        
+           chicago_store_distance_miles,
+           gary_store_distance_miles        
         from customer_addresses as ca
         join customers as c on ca.customer_id = c.customer_id
         join customer_food_pref_count as cfpc on ca.customer_id = cfpc.customer_id
