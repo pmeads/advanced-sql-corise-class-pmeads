@@ -8,7 +8,7 @@ with
 */
 event_data as 
     (
-        select distinct
+        select --distinct
             event_id,
             session_id,
             user_id,
@@ -16,6 +16,7 @@ event_data as
             json_extract_path_text(event_details,'event') as event_name,
             json_extract_path_text(event_details, 'recipe_id') as recipe_id
         from vk_data.events.website_activity
+        group by 1,2,3,4,5,6
     ),
 
 /* need to know which sessions have recipe event */
