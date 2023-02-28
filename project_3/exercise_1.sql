@@ -1,5 +1,5 @@
--- 178 unique sessions
-ALTER SESSION SET USE_CACHED_RESULT = FALSE; 
+--ALTER SESSION SET USE_CACHED_RESULT = FALSE; 
+--explain
 with 
 
 /*
@@ -11,12 +11,32 @@ event_data as
         select --distinct
             event_id,
             session_id,
-            user_id,
             event_timestamp,
             json_extract_path_text(event_details,'event') as event_name,
             json_extract_path_text(event_details, 'recipe_id') as recipe_id
         from vk_data.events.website_activity
-        group by 1,2,3,4,5,6
+        group by 1,2,3,4,5
+    ),
+
+grouped_sessions as 
+    (
+        select date(event_timestamp) as event_day,
+        	   session_id,
+               timestampdiff(second,min(event_timestamp),max(event_timestamp  ) ) as session_length
+               --count(session_id) as unique_sessions--,
+               --timestampdiff(second,min(event_timestamp),max(event_timestamp  ) ) as session_length
+        from event_data
+        group by event_day, session_id
+        order by 1,2
+    ),
+
+agg_results as
+    (
+        select event_day,
+               count(session_id) as unique_sessions,
+               avg(session_length) as avg_session_length
+        from grouped_sessions
+        group by event_day
     ),
 
 /* need to know which sessions have recipe event */
@@ -27,38 +47,11 @@ recipe_events as
         where recipe_id is not null
     ),
 
-/* 
-  of the sessions that actually got to a recipe, how many searches preceded the recipe? 
-  This correlated subquery was the most expensive operation causing 33% of the time. 
-  I changed it to join to a previous CTE which seemed to remove the expensive operation
-  and improve the performance. the original version is in the commented out CTE
-  "search_events1". The new version is "search_events2"
-*/
-
-/*
-search_events1 as
-    (
-        select
-           event_data.session_id,
-           sum(
-               case 
-                   when event_data.event_name = 'search' 
-                       then 1
-                       else 0
-               end ) as num_search_events
-        from event_data
-        where exists (
-            select 1 from event_data as ed 
-            where ed.session_id = event_data.session_id
-            and recipe_id is not null
-        )
-        group by event_data.session_id
-    ),
-*/
-
+/* find avg number of searches completed before displaying a recipe */
 search_events2 as 
     (
         select 
+           date(event_timestamp) as event_day, 
            event_data.session_id,
            sum(
                case 
@@ -68,73 +61,41 @@ search_events2 as
                end ) as num_search_events
         from event_data
         join recipe_events on recipe_events.session_id = event_data.session_id
-        group by event_data.session_id
+        group by 
+            event_day,
+            event_data.session_id
 
     ),
 
 recipe_most_viewed as 
     (
         select 
+            date(event_timestamp) as event_day,
             recipe_id,
             count(*) recipe_count
-        from recipe_events 
+        from event_data 
         where recipe_id is not null
-        group by recipe_id
-        order by recipe_count desc
-        limit 1
-    ),
-/*
-  had an uncecessary order by 
-*/
-avg_session_length as
-    (
-        
-        select 
-            activity.session_id,
-            count(1) as session_count,
-            min(activity.event_timestamp) as session_start,
-            max(activity.event_timestamp) as session_end,
-            timestampdiff(second,min(activity.event_timestamp),max(activity.event_timestamp  ) ) as session_length
-            
-        from event_data as activity
-        group by activity.session_id
-        --order by activity.session_id
-        
+        group by 1,2
+        qualify row_number() over (partition by event_day order by recipe_count desc) = 1
     ),
 
 final as 
     (
-        select 
-            'unique_sessions' as result_name,
-            count(avg_session_length.session_id)::varchar as result_value 
-        from avg_session_length
-        
-        union all
-        
-        select
-            'avg_session_length_in_seconds' as result_name,
-            avg(session_length)::varchar as result_value
-        from avg_session_length
-
-        union all
-
-        select 
-            'avg_number_of_search_events' as result_name, 
-            avg(num_search_events)::varchar as result_value
-        --from search_events1
+        --select * from agg_results
+        select  
+            agg_results.event_day,
+            agg_results.unique_sessions,
+            agg_results.avg_session_length,
+            recipe_most_viewed.recipe_id as most_popular_recipe_id,
+            avg(num_search_events) as avg_num_search_events
         from search_events2
-
-        union all
-        
-        select 
-            'most_viewed_recipe' as result_name,
-            min(recipe_id) as result_value
-        from recipe_most_viewed
-        
+        join agg_results on agg_results.event_day = search_events2.event_day
+        join recipe_most_viewed on recipe_most_viewed.event_day = search_events2.event_day
+        group by 
+            agg_results.event_day,
+            agg_results.unique_sessions,
+            agg_results.avg_session_length,
+            recipe_most_viewed.recipe_id
     )
 
 select * from final
---select * from search_events1
---select * from search_events2
---select * from recipe_most_viewed
-
