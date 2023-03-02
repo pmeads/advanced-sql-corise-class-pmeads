@@ -148,34 +148,34 @@ parts_total_spent as (
 ),
 
 /* put it all together */
-final as (
+final as 
+   (
 
-    select 
-        customers.customer_key,
-        last_urgent_order_date.last_order_date,
-        customers.order_numbers,
-        customers.total_spent,
-        parts_keys.part_1_key,
-        parts_quantities.part_1_quantity,
-        parts_total_spent.part_1_total_spent,
-        parts_keys.part_2_key,
-        parts_quantities.part_2_quantity,
-        parts_total_spent.part_2_total_spent,
-        parts_keys.part_3_key,
-        parts_quantities.part_3_quantity,
-        parts_total_spent.part_3_total_spent    
-    from three_highest_urgent_orders_agg as customers
-    join customer_last_urgent_order_date as last_urgent_order_date 
-       on last_urgent_order_date.customer_key = customers.customer_key
-    join parts_keys 
-       on parts_keys.customer_key = customers.customer_key
-    join parts_quantities
-        on parts_quantities.customer_key = customers.customer_key
-    join parts_total_spent
-        on parts_total_spent.customer_key = customers.customer_key
-    order by last_order_date desc
+        select 
+            customers.customer_key,
+            last_urgent_order_date.last_order_date,
+            customers.order_numbers,
+            customers.total_spent,
+            parts_keys.part_1_key,
+            parts_quantities.part_1_quantity,
+            parts_total_spent.part_1_total_spent,
+            parts_keys.part_2_key,
+            parts_quantities.part_2_quantity,
+            parts_total_spent.part_2_total_spent,
+            parts_keys.part_3_key,
+            parts_quantities.part_3_quantity,
+            parts_total_spent.part_3_total_spent    
+        from three_highest_urgent_orders_agg as customers
+        join customer_last_urgent_order_date as last_urgent_order_date 
+            on last_urgent_order_date.customer_key = customers.customer_key
+        join parts_keys 
+            on parts_keys.customer_key = customers.customer_key
+        join parts_quantities
+             on parts_quantities.customer_key = customers.customer_key
+        join parts_total_spent
+             on parts_total_spent.customer_key = customers.customer_key
+        order by last_order_date desc
 
-    
-)
+   )
 select * from final
 limit 100

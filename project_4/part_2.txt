@@ -1,0 +1,13 @@
+There are a couple issues with the candidate's SQL
+
+I like that the CTE's are named relatively well. However, I don't feel it is modularized 
+enough. It is not easy to understand, especially as there are no comments. I feel like 
+the candidate tried to do too much in the CTE's. Additionally, the last_order_date is 
+taken from the top 3 orders, and that is not what was asked (the last_order_date from 
+ALL urgent orders was requested). The results are off in that the order_numbers have 
+duplicate orders in them. The Lineitem table has the part key in it so there was no 
+reason to join in the part table. This may have accounted for the duplicates.  Definately 
+joining this table contributed to the execution time added to the execution time 
+unnecesarily.  More poor performance implications were created by adding order by's in 
+the CTEs.
+
