@@ -181,6 +181,19 @@ select * from final
 limit 100
 
 /*
+part 2
+
+Do you agree with the results of the query?
+    No. there are duplicates in the order_numbers field. this also skews the total_spent.
+
+Is it easy to understand?
+    No. It's not modular enough and there are no comments
+
+Could the code be more efficient?
+    Yes. Remove the unecessary join to the parts table and order by's in the CTE's. Save 
+    the order by for the last query. 
+
+
 There are a couple issues with the candidate's SQL
 
 I like that the CTE's are named relatively well. However, I don't feel it is modularized 
